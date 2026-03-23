@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#2d1b69">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Indubol Stock">
+<title>Indubol S.A. — Control de Stock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --indigo-900: #1a0f4f;
+    --indigo-800: #2d1b69;
+    --indigo-700: #3d2882;
+    --indigo-600: #4e35a0;
+    --indigo-500: #6248b8;
+    --indigo-400: #7a63cc;
+    --indigo-300: #9b87dd;
+    --indigo-200: #c4b8ef;
+    --indigo-100: #e8e4f7;
+    --indigo-50:  #f4f2fc;
+    --accent: #a78bfa;
+    --accent-bright: #c4b5fd;
+    --white: #ffffff;
+    --text-primary: #1a0f4f;
+    --text-secondary: #4e35a0;
+    --text-muted: #7a63cc;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg: #f4f2fc;
+    --card: #ffffff;
+    --border: rgba(78,53,160,0.15);
+    --shadow: 0 4px 24px rgba(45,27,105,0.10);
+    --shadow-lg: 0 8px 40px rgba(45,27,105,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, var(--indigo-900) 0%, var(--indigo-700) 100%);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-svg {
+    width: 130px;
+    height: auto;
+    filter: brightness(0) invert(1);
+    opacity: 0.95;
+  }
+  .header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--indigo-200);
+    opacity: 0.8;
+  }
+  .whatsapp-btn {
+    background: #25D366;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 8px 14px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 2px 10px rgba(37,211,102,0.4);
+    white-space: nowrap;
+  }
+  .whatsapp-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(37,211,102,0.5); }
+  .whatsapp-btn svg { width: 16px; height: 16px; }
+
+  /* ── NAV TABS ── */
+  nav {
+    background: var(--indigo-800);
+    display: flex;
+    border-bottom: 2px solid var(--indigo-600);
+  }
+  nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--indigo-300);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 12px 4px;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  nav button .nav-icon { font-size: 18px; }
+  nav button.active {
+    color: var(--white);
+    background: rgba(255,255,255,0.07);
+  }
+  nav button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    background: var(--accent-bright);
+    border-radius: 2px;
+  }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--indigo-700);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── STATS ROW ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: linear-gradient(135deg, var(--indigo-800), var(--indigo-600));
+    border-radius: 12px;
+    padding: 14px 12px;
+    color: white;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent-bright);
+  }
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--indigo-200);
+    margin-top: 4px;
+  }
+
+  /* ── PRODUCT LIST ── */
+  .product-list { display: flex; flex-direction: column; gap: 10px; }
+  .product-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--indigo-500);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(45,27,105,0.06);
+    transition: box-shadow .2s;
+  }
+  .product-item:hover { box-shadow: var(--shadow); }
+  .product-info { flex: 1; }
+  .product-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--indigo-800);
+  }
+  .product-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .product-meta span {
+    background: var(--indigo-50);
+    border: 1px solid var(--indigo-200);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-weight: 500;
+  }
+  .product-stock-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 60px;
+  }
+  .stock-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stock-badge.ok { color: var(--indigo-700); }
+  .stock-badge.low { color: var(--warning); }
+  .stock-badge.zero { color: var(--danger); }
+  .stock-unit { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+  .product-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: 12px;
+  }
+  .btn-icon {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: transform .15s, opacity .15s;
+  }
+  .btn-icon:hover { transform: scale(1.1); }
+  .btn-entrada { background: rgba(34,197,94,0.12); color: var(--success); }
+  .btn-salida  { background: rgba(239,68,68,0.12);  color: var(--danger); }
+  .btn-edit    { background: rgba(78,53,160,0.1);   color: var(--indigo-600); }
+  .btn-delete  { background: rgba(239,68,68,0.08);  color: #f87171; }
+
+  /* ── FORMS ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .form-grid .full { grid-column: 1/-1; }
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--white);
+    outline: none;
+    transition: border-color .2s;
+    appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--indigo-500);
+    box-shadow: 0 0 0 3px rgba(98,72,184,0.12);
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--indigo-700), var(--indigo-500));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 16px rgba(45,27,105,0.25);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,27,105,0.35); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--indigo-600);
+    border: 1.5px solid var(--indigo-300);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-secondary:hover { background: var(--indigo-50); }
+
+  /* ── MOVIMIENTO FORM ── */
+  .mov-product-select { margin-bottom: 16px; }
+
+  /* ── HISTORIAL ── */
+  .historial-list { display: flex; flex-direction: column; gap: 8px; }
+  .hist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(45,27,105,0.06);
+  }
+  .hist-badge {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .hist-badge.entrada { background: rgba(34,197,94,0.12); }
+  .hist-badge.salida  { background: rgba(239,68,68,0.12); }
+  .hist-info { flex: 1; min-width: 0; }
+  .hist-product {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px; font-weight: 700;
+    color: var(--indigo-800);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hist-detail { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .hist-qty {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px; font-weight: 800;
+    text-align: right; min-width: 48px;
+  }
+  .hist-qty.entrada { color: var(--success); }
+  .hist-qty.salida  { color: var(--danger); }
+  .hist-date { font-size: 11px; color: var(--text-muted); text-align: right; margin-top: 2px; white-space: nowrap; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(26,15,79,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 24px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px; font-weight: 800;
+    color: var(--indigo-800);
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-actions .btn-primary { flex: 2; }
+  .modal-actions .btn-secondary { flex: 1; }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .filter-bar input, .filter-bar select {
+    flex: 1; min-width: 120px; font-size: 13px; padding: 8px 11px;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--indigo-800);
+    color: white; border-radius: 50px;
+    padding: 12px 24px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px; font-weight: 600; letter-spacing: 1px;
+    box-shadow: var(--shadow-lg);
+    z-index: 300;
+    transition: transform .3s ease;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── WHATSAPP MODAL ── */
+  #wa-modal textarea { min-height: 120px; font-size: 14px; }
+  .wa-preview {
+    background: #e7fdb9;
+    border: 1px solid #b7e97f;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 13px;
+    color: #1a3a00;
+    margin-bottom: 14px;
+    white-space: pre-wrap;
+    font-family: 'Barlow', sans-serif;
+    line-height: 1.5;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .stat-value { font-size: 22px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .full { grid-column: 1; }
+    .product-meta { gap: 6px; }
+    nav button { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-area">
+      <!-- SVG inline del logo Indubol recreado -->
+      <svg class="logo-svg" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+        <g fill="currentColor">
+          <!-- Círculo concéntrico izquierdo -->
+          <circle cx="38" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="38" cy="32" r="22" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          <circle cx="38" cy="32" r="16" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="38" cy="32" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="38" cy="32" r="4" fill="currentColor"/>
+          <!-- Texto INDUBOL -->
+          <text x="72" y="44" font-family="Arial Black, sans-serif" font-size="30" font-weight="900" letter-spacing="2" fill="currentColor">INDUBOL</text>
+          <!-- S.A. -->
+          <text x="252" y="36" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="currentColor">S.A.</text>
+          <!-- Línea inferior -->
+          <line x1="72" y1="52" x2="295" y2="52" stroke="currentColor" stroke-width="2"/>
+          <!-- Subtítulo -->
+          <text x="72" y="68" font-family="Arial, sans-serif" font-size="9" letter-spacing="1.5" fill="currentColor" font-style="italic">FÁBRICA DE BOLSAS PARA EL AGRO Y LA INDUSTRIA</text>
+        </g>
+      </svg>
+    </div>
+    <button class="whatsapp-btn" onclick="openWAModal()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Notificar
+    </button>
+  </div>
+  <nav>
+    <button class="active" onclick="showSection('dashboard')" id="tab-dashboard">
+      <span class="nav-icon">📊</span>Dashboard
+    </button>
+    <button onclick="showSection('productos')" id="tab-productos">
+      <span class="nav-icon">📦</span>Productos
+    </button>
+    <button onclick="showSection('movimientos')" id="tab-movimientos">
+      <span class="nav-icon">↕️</span>Movimientos
+    </button>
+    <button onclick="showSection('historial')" id="tab-historial">
+      <span class="nav-icon">📋</span>Historial
+    </button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ═══════════ DASHBOARD ═══════════ -->
+  <section id="sec-dashboard" class="section active">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-productos">0</div>
+        <div class="stat-label">Productos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total-unidades">0</div>
+        <div class="stat-label">Unidades</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-movimientos">0</div>
+        <div class="stat-label">Movimientos</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚠️ Stock Bajo o Sin Stock</div>
+      <div id="dashboard-alertas">
+        <div class="empty-state"><div class="icon">✅</div><p>Todo el stock está en orden.</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🕐 Últimos Movimientos</div>
+      <div id="dashboard-recientes">
+        <div class="empty-state"><div class="icon">📋</div><p>Sin movimientos aún.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ PRODUCTOS ═══════════ -->
+  <section id="sec-productos" class="section">
+    <div class="card">
+      <div class="card-title">➕ Nuevo Producto</div>
+      <div class="form-grid">
+        <div class="full">
+          <label>Nombre / Descripción</label>
+          <input id="p-nombre" type="text" placeholder="Ej: Bolsa de arpillera">
+        </div>
+        <div>
+          <label>Tamaño</label>
+          <input id="p-tamanio" type="text" placeholder="Ej: 60x90 cm">
+        </div>
+        <div>
+          <label>Tipo de Confección</label>
+          <select id="p-tipo">
+            <option value="">Seleccionar...</option>
+            <option>Cosida</option>
+            <option>Sellada</option>
+            <option>Cortada</option>
+            <option>Reforzada</option>
+            <option>Con fuelle</option>
+            <option>Otra</option>
+          </select>
+        </div>
+        <div>
+          <label>Precio ($ ARS)</label>
+          <input id="p-precio" type="number" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div>
+          <label>Stock Inicial</label>
+          <input id="p-stock" type="number" placeholder="0" min="0">
+        </div>
+        <div>
+          <label>Stock Mínimo (alerta)</label>
+          <input id="p-minimo" type="number" placeholder="10" min="0">
+        </div>
+        <div class="full">
+          <label>Notas</label>
+          <textarea id="p-notas" placeholder="Información adicional..."></textarea>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="guardarProducto()">GUARDAR PRODUCTO</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📦 Listado de Productos</div>
+      <div class="filter-bar">
+        <input id="filtro-nombre" type="text" placeholder="🔍 Buscar..." oninput="renderProductos()">
+        <select id="filtro-tipo" onchange="renderProductos()">
+          <option value="">Todos los tipos</option>
+          <option>Cosida</option>
+          <option>Sellada</option>
+          <option>Cortada</option>
+          <option>Reforzada</option>
+          <option>Con fuelle</option>
+          <option>Otra</option>
+        </select>
+      </div>
+      <div class="product-list" id="product-list">
+        <div class="empty-state"><div class="icon">📦</div><p>No hay productos cargados aún.<br>Agregá el primero arriba.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ MOVIMIENTOS ═══════════ -->
+  <section id="sec-movimientos" class="section">
+    <div class="card">
+      <div class="card-title">↕️ Registrar Movimiento</div>
+
+      <label>Tipo de Movimiento</label>
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="btn-primary" id="btn-tipo-entrada" style="flex:1;background:linear-gradient(135deg,#166534,#22c55e)"
+          onclick="setTipoMov('entrada')">📥 ENTRADA</button>
+        <button class="btn-secondary" id="btn-tipo-salida" style="flex:1;"
+          onclick="setTipoMov('salida')">📤 SALIDA</button>
+      </div>
+      <input type="hidden" id="mov-tipo" value="entrada">
+
+      <div class="mov-product-select">
+        <label>Producto</label>
+        <select id="mov-producto">
+          <option value="">Seleccionar producto...</option>
+        </select>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label>Cantidad</label>
+          <input id="mov-cantidad" type="number" placeholder="0" min="1">
+        </div>
+        <div>
+          <label>Referencia / Nota</label>
+          <input id="mov-nota" type="text" placeholder="Ej: Remito 1234">
+        </div>
+      </div>
+      <div id="mov-stock-actual" style="margin:10px 0; padding:10px 14px; background:var(--indigo-50); border-radius:8px; font-size:13px; color:var(--text-secondary); display:none;">
+        Stock actual: <strong id="mov-stock-val">0</strong> unidades
+      </div>
+      <button class="btn-primary" onclick="registrarMovimiento()" style="margin-top:12px">CONFIRMAR MOVIMIENTO</button>
+    </div>
+  </section>
+
+  <!-- ═══════════ HISTORIAL ═══════════ -->
+  <section id="sec-historial" class="section">
+    <div class="card">
+      <div class="card-title">📋 Historial de Movimientos</div>
+      <div class="filter-bar">
+        <input id="hist-filtro" type="text" placeholder="🔍 Buscar producto..." oninput="renderHistorial()">
+        <select id="hist-tipo" onchange="renderHistorial()">
+          <option value="">Todos</option>
+          <option value="entrada">Solo entradas</option>
+          <option value="salida">Solo salidas</option>
+        </select>
+        <button class="btn-secondary" style="white-space:nowrap;font-size:12px;" onclick="exportarCSV()">⬇️ Exportar CSV</button>
+      </div>
+      <div class="historial-list" id="historial-list">
+        <div class="empty-state"><div class="icon">📋</div><p>No hay movimientos registrados.</p></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════ MODAL EDITAR PRODUCTO ═══════════ -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar Producto</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-grid">
+      <div class="full">
+        <label>Nombre / Descripción</label>
+        <input id="edit-nombre" type="text">
+      </div>
+      <div>
+        <label>Tamaño</label>
+        <input id="edit-tamanio" type="text">
+      </div>
+      <div>
+        <label>Tipo de Confección</label>
+        <select id="edit-tipo">
+          <option>Cosida</option><option>Sellada</option><option>Cortada</option>
+          <option>Reforzada</option><option>Con fuelle</option><option>Otra</option>
+        </select>
+      </div>
+      <div>
+        <label>Precio ($ ARS)</label>
+        <input id="edit-precio" type="number" min="0" step="0.01">
+      </div>
+      <div>
+        <label>Stock Mínimo</label>
+        <input id="edit-minimo" type="number" min="0">
+      </div>
+      <div class="full">
+        <label>Notas</label>
+        <textarea id="edit-notas"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('edit-modal')">Cancelar</button>
+      <button class="btn-primary" onclick="guardarEdicion()">GUARDAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL MOVIMIENTO RÁPIDO ═══════════ -->
+<div class="modal-overlay" id="mov-modal">
+  <div class="modal">
+    <div class="modal-title" id="mov-modal-title">📥 Entrada Rápida</div>
+    <input type="hidden" id="mq-id">
+    <input type="hidden" id="mq-tipo">
+    <div style="margin-bottom:14px; padding:12px; background:var(--indigo-50); border-radius:8px;">
+      <div style="font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700; color:var(--indigo-800);" id="mq-nombre"></div>
+      <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">Stock actual: <strong id="mq-stock">0</strong> unidades</div>
+    </div>
+    <label>Cantidad</label>
+    <input id="mq-cantidad" type="number" placeholder="0" min="1" style="margin-bottom:12px;">
+    <label>Referencia / Nota</label>
+    <input id="mq-nota" type="text" placeholder="Ej: Remito 1234">
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('mov-modal')">Cancelar</button>
+      <button class="btn-primary" id="mq-btn" onclick="confirmarMovRapido()">CONFIRMAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL WHATSAPP ═══════════ -->
+<div class="modal-overlay" id="wa-modal">
+  <div class="modal" id="wa-modal-inner">
+    <div class="modal-title">📲 Notificar por WhatsApp</div>
+    <label style="margin-bottom:8px;">Vista previa del mensaje</label>
+    <div class="wa-preview" id="wa-preview"></div>
+    <label>Número de destino</label>
+    <input id="wa-numero" type="tel" placeholder="Ej: 5493515001234" style="margin-bottom:12px;">
+    <label>Editar mensaje (opcional)</label>
+    <textarea id="wa-mensaje"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('wa-modal')">Cancelar</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#166534,#25D366);" onclick="enviarWhatsApp()">
+        ENVIAR POR WHATSAPP
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+function getData() {
+  return {
+    productos: JSON.parse(localStorage.getItem('ind_productos') || '[]'),
+    movimientos: JSON.parse(localStorage.getItem('ind_movimientos') || '[]'),
+    waNumero: localStorage.getItem('ind_wa_numero') || ''
+  };
+}
+function save(key, val) { localStorage.setItem('ind_' + key, JSON.stringify(val)); }
+function saveStr(key, val) { localStorage.setItem('ind_' + key, val); }
+
+let db = getData();
+
+// ── NAVIGATION ──
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'productos') renderProductos();
+  if (name === 'movimientos') renderMovForm();
+  if (name === 'historial') renderHistorial();
+}
+
+// ── TOAST ──
+function toast(msg, ms=2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── MODAL ──
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+
+// ── PRODUCTOS ──
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+function guardarProducto() {
+  const nombre = document.getElementById('p-nombre').value.trim();
+  if (!nombre) { toast('⚠️ Ingresá un nombre'); return; }
+  const p = {
+    id: uid(),
+    nombre,
+    tamanio: document.getElementById('p-tamanio').value.trim(),
+    tipo: document.getElementById('p-tipo').value,
+    precio: parseFloat(document.getElementById('p-precio').value) || 0,
+    stock: parseInt(document.getElementById('p-stock').value) || 0,
+    minimo: parseInt(document.getElementById('p-minimo').value) || 0,
+    notas: document.getElementById('p-notas').value.trim()
+  };
+  db.productos.push(p);
+  save('productos', db.productos);
+  ['p-nombre','p-tamanio','p-precio','p-stock','p-minimo','p-notas'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-tipo').value = '';
+  renderProductos();
+  toast('✅ Producto guardado');
+}
+
+function renderProductos() {
+  db = getData();
+  const filtroN = document.getElementById('filtro-nombre').value.toLowerCase();
+  const filtroT = document.getElementById('filtro-tipo').value;
+  let prods = db.productos.filter(p =>
+    p.nombre.toLowerCase().includes(filtroN) &&
+    (!filtroT || p.tipo === filtroT)
+  );
+  const list = document.getElementById('product-list');
+  if (!prods.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>Sin productos que coincidan.</p></div>';
+    return;
+  }
+  list.innerHTML = prods.map(p => {
+    const cls = p.stock === 0 ? 'zero' : p.stock <= p.minimo && p.minimo > 0 ? 'low' : 'ok';
+    const meta = [p.tamanio, p.tipo, p.precio > 0 ? '$' + p.precio.toLocaleString('es-AR') : ''].filter(Boolean);
+    return `<div class="product-item">
+      <div class="product-info">
+        <div class="product-name">${p.nombre}</div>
+        <div class="product-meta">${meta.map(m=>`<span>${m}</span>`).join('')}</div>
+        ${p.notas ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${p.notas}</div>` : ''}
+      </div>
+      <div class="product-stock-area">
+        <div class="stock-badge ${cls}">${p.stock}</div>
+        <div class="stock-unit">unid.</div>
+      </div>
+      <div class="product-actions">
+        <button class="btn-icon btn-entrada" title="Entrada" onclick="openMovRapido('${p.id}','entrada')">📥</button>
+        <button class="btn-icon btn-salida"  title="Salida"  onclick="openMovRapido('${p.id}','salida')">📤</button>
+        <button class="btn-icon btn-edit"    title="Editar"  onclick="editarProducto('${p.id}')">✏️</button>
+        <button class="btn-icon btn-delete"  title="Eliminar" onclick="eliminarProducto('${p.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editarProducto(id) {
+  const p = db.productos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('edit-id').value = p.id;
+  document.getElementById('edit-nombre').value = p.nombre;
+  document.getElementById('edit-tamanio').value = p.tamanio;
+  document.getElementById('edit-tipo').value = p.tipo;
+  document.getElementById('edit-precio').value = p.precio;
+  document.getElementById('edit-minimo').value = p.minimo;
+  document.getElementById('edit-notas').value = p.notas;
+  openModal('edit-modal');
+}
+function guardarEdicion() {
+  const id = document.getElementById('edit-id').value;
+  const idx = db.productos.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  db.productos[idx].nombre  = document.getElementById('edit-nombre').value.trim();
+  db.productos[idx].tamanio = document.getElementById('edit-tamanio').value.trim();
+  db.productos[idx].tipo    = document.getElementById('edit-tipo').value;
+  db.productos[idx].precio  = parseFloat(document.getElementById('edit-precio').value) || 0;
+  db.productos[idx].minimo  = parseInt(document.getElementById('edit-minimo').value) || 0;
+  db.productos[idx].notas   = document.getElementById('edit-notas').value.trim();
+  save('productos', db.productos);
+  closeModal('edit-modal');
+  renderProductos();
+  toast('✅ Producto actualizado');
+}
+function eliminarProducto(id) {
+  if (!confirm('¿Eliminar este producto?')) return;
+  db.productos = db.productos.filter(x => x.id !== id);
+  save('productos', db.productos);
+  renderProductos();
+  renderDashboard();
+  toast('🗑️ Producto eliminado');
+}
+
+// ── MOVIMIENTOS ──
+let tipoMov = 'entrada';
+function setTipoMov(t) {
+  tipoMov = t;
+  document.getElementById('mov-tipo').value = t;
+  const be = document.getElementById('btn-tipo-entrada');
+  const bs = document.getElementById('btn-tipo-salida');
+  if (t === 'entrada') {
+    be.className = 'btn-primary'; be.style.flex='1'; be.style.background='linear-gradient(135deg,#166534,#22c55e)';
+    bs.className = 'btn-secondary'; bs.style.flex='1';
+  } else {
+    bs.className = 'btn-primary'; bs.style.flex='1'; bs.style.background='linear-gradient(135deg,#7f1d1d,#ef4444)';
+    be.className = 'btn-secondary'; be.style.flex='1'; be.style.background='';
+  }
+}
+function renderMovForm() {
+  db = getData();
+  const sel = document.getElementById('mov-producto');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Seleccionar producto...</option>' +
+    db.productos.map(p => `<option value="${p.id}">${p.nombre}${p.tamanio ? ' – '+p.tamanio : ''}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'mov-producto') updateMovStock();
+});
+function updateMovStock() {
+  const id = document.getElementById('mov-producto').value;
+  const area = document.getElementById('mov-stock-actual');
+  if (!id) { area.style.display='none'; return; }
+  const p = db.productos.find(x => x.id === id);
+  if (p) {
+    document.getElementById('mov-stock-val').textContent = p.stock;
+    area.style.display = 'block';
+  }
+}
+function registrarMovimiento() {
+  const tipo = document.getElementById('mov-tipo').value || tipoMov;
+  const pid  = document.getElementById('mov-producto').value;
+  const cant = parseInt(document.getElementById('mov-cantidad').value);
+  const nota = document.getElementById('mov-nota').value.trim();
+  if (!pid) { toast('⚠️ Seleccioná un producto'); return; }
+  if (!cant || cant <= 0) { toast('⚠️ Ingresá una cantidad válida'); return; }
+  const idx = db.productos.findIndex(x => x.id === pid);
+  if (idx < 0) return;
+  if (tipo === 'salida' && db.productos[idx].stock < cant) { toast('⛔ Stock insuficiente'); return; }
+  db.productos[idx].stock += tipo === 'entrada' ? cant : -cant;
+  const mov = {
+    id: uid(), tipo, pid,
+    nombre: db.productos[idx].nombre,
+    cantidad: cant, nota,
+    fecha: new Date().toISOString()
+  };
+  db.movimientos.unshift(mov);
+  save('productos', db.productos);
+  save('movimientos', db.movimientos);
+  document.getElementById('mov-cantidad').value = '';
+  document.getElementById('mov-nota').value = '';
+  document.getElementById('mov-producto').value = '';
+  document.getElementById('mov-stock-actual').style.display = 'none';
+  toast((tipo === 'entrada' ? '📥 Entrada' : '📤 Salida') + ' registrada: ' + cant + ' u.');
+  renderDashboard();
+}
+
+// ── MOV RÁPIDO ──
+function openMovRapido(id, tipo) {
+  const p = db.productos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('mq-id').value = id;
+  document.getElementById('mq-tipo').value = tipo;
+  document.getElementById('mq-nombre').textContent = p.nombre + (p.tamanio ? ' – ' + p.tamanio : '');
+  document.getElementById('mq-stock').textContent = p.stock;
+  document.getElementById('mq-cantidad').value = '';
+  document.getElementById('mq-nota').value = '';
+  document.getElementById('mov-modal-title').textContent = tipo === 'entrada' ? '📥 Entrada Rápida' : '📤 Salida Rápida';
+  document.getElementById('mq-btn').style.background = tipo === 'entrada'
+    ? 'linear-gradient(135deg,#166534,#22c55e)'
+    : 'linear-gradient(135deg,#7f1d1d,#ef4444)';
+  openModal('mov-modal');
+}
+function confirmarMovRapido() {
+  const id   = document.getElementById('mq-id').value;
+  const tipo = document.getElementById('mq-tipo').value;
+  const cant = parseInt(document.getElementById('mq-cantidad').value);
+  const nota = document.getElementById('mq-nota').value.trim();
+  if (!cant || cant <= 0) { toast('⚠️ Ingresá una cantidad'); return; }
+  const idx = db.productos.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  if (tipo === 'salida' && db.productos[idx].stock < cant) { toast('⛔ Stock insuficiente'); return; }
+  db.productos[idx].stock += tipo === 'entrada' ? cant : -cant;
+  db.movimientos.unshift({ id: uid(), tipo, pid: id, nombre: db.productos[idx].nombre, cantidad: cant, nota, fecha: new Date().toISOString() });
+  save('productos', db.productos);
+  save('movimientos', db.movimientos);
+  closeModal('mov-modal');
+  renderProductos();
+  renderDashboard();
+  toast((tipo === 'entrada' ? '📥 ' : '📤 ') + cant + ' unidades registradas');
+}
+
+// ── HISTORIAL ──
+function renderHistorial() {
+  db = getData();
+  const filtroN = document.getElementById('hist-filtro').value.toLowerCase();
+  const filtroT = document.getElementById('hist-tipo').value;
+  let movs = db.movimientos.filter(m =>
+    m.nombre.toLowerCase().includes(filtroN) &&
+    (!filtroT || m.tipo === filtroT)
+  );
+  const list = document.getElementById('historial-list');
+  if (!movs.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No hay movimientos que coincidan.</p></div>';
+    return;
+  }
+  list.innerHTML = movs.map(m => {
+    const d = new Date(m.fecha);
+    const fechaStr = d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    return `<div class="hist-item">
+      <div class="hist-badge ${m.tipo}">${m.tipo === 'entrada' ? '📥' : '📤'}</div>
+      <div class="hist-info">
+        <div class="hist-product">${m.nombre}</div>
+        <div class="hist-detail">${m.nota || (m.tipo === 'entrada' ? 'Ingreso de stock' : 'Egreso de stock')}</div>
+      </div>
+      <div>
+        <div class="hist-qty ${m.tipo}">${m.tipo === 'entrada' ? '+' : '-'}${m.cantidad}</div>
+        <div class="hist-date">${fechaStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportarCSV() {
+  db = getData();
+  if (!db.movimientos.length) { toast('⚠️ No hay movimientos para exportar'); return; }
+  const cols = ['Fecha','Tipo','Producto','Cantidad','Nota'];
+  const rows = db.movimientos.map(m => [
+    new Date(m.fecha).toLocaleString('es-AR'),
+    m.tipo, m.nombre, m.cantidad, m.nota || ''
+  ].map(v => `"${v}"`).join(','));
+  const csv = [cols.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'indubol_stock_' + new Date().toLocaleDateString('es-AR').replace(/\//g,'-') + '.csv';
+  a.click();
+  toast('📥 CSV exportado');
+}
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  db = getData();
+  document.getElementById('stat-productos').textContent = db.productos.length;
+  document.getElementById('stat-total-unidades').textContent = db.productos.reduce((a,p)=>a+p.stock,0);
+  document.getElementById('stat-movimientos').textContent = db.movimientos.length;
+
+  // Alertas
+  const bajos = db.productos.filter(p => p.stock === 0 || (p.minimo > 0 && p.stock <= p.minimo));
+  const alertDiv = document.getElementById('dashboard-alertas');
+  if (!bajos.length) {
+    alertDiv.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Todo el stock está en orden.</p></div>';
+  } else {
+    alertDiv.innerHTML = bajos.map(p => {
+      const cls = p.stock === 0 ? 'zero' : 'low';
+      const label = p.stock === 0 ? '⛔ SIN STOCK' : '⚠️ STOCK BAJO';
+      return `<div class="product-item" style="border-left-color:${p.stock===0?'var(--danger)':'var(--warning)'}">
+        <div class="product-info">
+          <div class="product-name">${p.nombre}</div>
+          <div class="product-meta"><span>${p.tamanio||''}</span><span>${p.tipo||''}</span></div>
+        </div>
+        <div style="text-align:center">
+          <div class="stock-badge ${cls}">${p.stock}</div>
+          <div style="font-size:10px;font-weight:700;color:${p.stock===0?'var(--danger)':'var(--warning)'};letter-spacing:1px;">${label}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Últimos movimientos
+  const recDiv = document.getElementById('dashboard-recientes');
+  const ultimos = db.movimientos.slice(0, 5);
+  if (!ultimos.length) {
+    recDiv.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Sin movimientos aún.</p></div>';
+  } else {
+    recDiv.innerHTML = ultimos.map(m => {
+      const d = new Date(m.fecha);
+      const f = d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="hist-item">
+        <div class="hist-badge ${m.tipo}">${m.tipo==='entrada'?'📥':'📤'}</div>
+        <div class="hist-info"><div class="hist-product">${m.nombre}</div><div class="hist-detail">${m.nota||''}</div></div>
+        <div><div class="hist-qty ${m.tipo}">${m.tipo==='entrada'?'+':'-'}${m.cantidad}</div><div class="hist-date">${f}</div></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── WHATSAPP ──
+function openWAModal() {
+  db = getData();
+  const bajos = db.productos.filter(p => p.stock === 0 || (p.minimo > 0 && p.stock <= p.minimo));
+  const total = db.productos.reduce((a,p)=>a+p.stock,0);
+  let msg = `📦 *INDUBOL S.A. – Reporte de Stock*\n`;
+  msg += `📅 ${new Date().toLocaleString('es-AR')}\n\n`;
+  if (bajos.length) {
+    msg += `⚠️ *Productos con stock bajo o sin stock:*\n`;
+    bajos.forEach(p => { msg += `  • ${p.nombre}${p.tamanio?' ('+p.tamanio+')':''}: *${p.stock} unidades*\n`; });
+    msg += '\n';
+  }
+  msg += `📊 *Resumen:*\n`;
+  msg += `  • Total de productos: ${db.productos.length}\n`;
+  msg += `  • Total de unidades en stock: ${total}\n`;
+  if (db.movimientos.length) {
+    const ult = db.movimientos[0];
+    msg += `\n🕐 *Último movimiento:*\n  ${ult.tipo==='entrada'?'📥 Entrada':'📤 Salida'} de ${ult.cantidad} u. de ${ult.nombre}`;
+  }
+  document.getElementById('wa-preview').textContent = msg;
+  document.getElementById('wa-mensaje').value = msg;
+  document.getElementById('wa-numero').value = db.waNumero || '';
+  openModal('wa-modal');
+}
+function enviarWhatsApp() {
+  const num = document.getElementById('wa-numero').value.replace(/\D/g,'');
+  const msg = document.getElementById('wa-mensaje').value;
+  if (!num) { toast('⚠️ Ingresá un número de WhatsApp'); return; }
+  saveStr('wa_numero', num);
+  const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  closeModal('wa-modal');
+  toast('📲 Abriendo WhatsApp...');
+}
+
+// Cerrar modales al click fuera
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+// ── INIT ──
+renderDashboard();
+</script>
+</body>
+</html>
