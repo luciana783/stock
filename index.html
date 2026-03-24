@@ -475,6 +475,40 @@
     line-height: 1.5;
   }
 
+  /* ── CONTACTOS ── */
+  .contact-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid #25D366;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(45,27,105,0.06);
+    margin-bottom: 10px;
+    transition: box-shadow .2s;
+  }
+  .contact-item:hover { box-shadow: var(--shadow); }
+  .contact-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--indigo-600), var(--indigo-400));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 800;
+    color: white; flex-shrink: 0; margin-right: 12px;
+  }
+  .contact-info { flex: 1; }
+  .contact-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px; font-weight: 700; color: var(--indigo-800);
+  }
+  .contact-number { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .contact-actions { display: flex; gap: 6px; }
+  .btn-wa { background: rgba(37,211,102,0.12); color: #16a34a; }
+  .btn-wa-stock { background: rgba(37,211,102,0.20); color: #15803d; font-size: 12px !important; width: auto !important; padding: 0 10px; }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 480px) {
     .stats-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
@@ -516,6 +550,9 @@
       Notificar
     </button>
   </div>
+  <div style="text-align:center; padding: 3px 0; background: rgba(0,0,0,0.2);">
+    <span id="conexion-badge" style="font-size:11px; font-weight:600; letter-spacing:1px; color: var(--indigo-300);">⏳ Conectando...</span>
+  </div>
   <nav>
     <button class="active" onclick="showSection('dashboard')" id="tab-dashboard">
       <span class="nav-icon">📊</span>Dashboard
@@ -528,6 +565,9 @@
     </button>
     <button onclick="showSection('historial')" id="tab-historial">
       <span class="nav-icon">📋</span>Historial
+    </button>
+    <button onclick="showSection('contactos')" id="tab-contactos">
+      <span class="nav-icon">👥</span>Contactos
     </button>
   </nav>
 </header>
@@ -688,6 +728,34 @@
     </div>
   </section>
 
+  <!-- ═══════════ CONTACTOS ═══════════ -->
+  <section id="sec-contactos" class="section">
+    <div class="card">
+      <div class="card-title">➕ Nuevo Contacto</div>
+      <div class="form-grid">
+        <div class="full">
+          <label>Nombre</label>
+          <input id="c-nombre" type="text" placeholder="Ej: Juan Pérez">
+        </div>
+        <div class="full">
+          <label>Número de WhatsApp</label>
+          <input id="c-numero" type="tel" placeholder="Ej: 5493515001234 (sin + ni espacios)">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="guardarContacto()">GUARDAR CONTACTO</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👥 Mis Contactos</div>
+      <div class="filter-bar">
+        <input id="filtro-contacto" type="text" placeholder="🔍 Buscar contacto..." oninput="renderContactos()">
+      </div>
+      <div id="contact-list">
+        <div class="empty-state"><div class="icon">👥</div><p>No hay contactos cargados aún.<br>Agregá el primero arriba.</p></div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <!-- ═══════════ MODAL EDITAR PRODUCTO ═══════════ -->
@@ -745,6 +813,10 @@
     <input id="mq-cantidad" type="number" placeholder="0" min="1" style="margin-bottom:12px;">
     <label>Referencia / Nota</label>
     <input id="mq-nota" type="text" placeholder="Ej: Remito 1234">
+    <div id="mq-contacto-wrap" style="margin-top:12px; display:none;">
+      <label>Destinatario (opcional)</label>
+      <select id="mq-contacto"><option value="">Sin destinatario</option></select>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('mov-modal')">Cancelar</button>
       <button class="btn-primary" id="mq-btn" onclick="confirmarMovRapido()">CONFIRMAR</button>
@@ -774,19 +846,61 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script>
-// ── DATA ──
-function getData() {
-  return {
-    productos: JSON.parse(localStorage.getItem('ind_productos') || '[]'),
-    movimientos: JSON.parse(localStorage.getItem('ind_movimientos') || '[]'),
-    waNumero: localStorage.getItem('ind_wa_numero') || ''
-  };
-}
-function save(key, val) { localStorage.setItem('ind_' + key, JSON.stringify(val)); }
-function saveStr(key, val) { localStorage.setItem('ind_' + key, val); }
+<script type="module">
+// ── FIREBASE SETUP ──
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, addDoc, query, orderBy, limit, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-let db = getData();
+const firebaseConfig = {
+  apiKey: "AIzaSyBF0LK1tDQQIqno-9-K0RcX_n4yIJu5Y1g",
+  authDomain: "control-de-stock-da00d.firebaseapp.com",
+  projectId: "control-de-stock-da00d",
+  storageBucket: "control-de-stock-da00d.firebasestorage.app",
+  messagingSenderId: "287024561994",
+  appId: "1:287024561994:web:45310f0aad6b73f2f04bb3"
+};
+
+const app = initializeApp(firebaseConfig);
+const firestore = getFirestore(app);
+
+// ── STATE (en memoria, sincronizado con Firestore) ──
+let db = { productos: [], movimientos: [], contactos: [] };
+
+// ── INDICADOR DE CONEXIÓN ──
+function setConexion(ok) {
+  const el = document.getElementById('conexion-badge');
+  if (!el) return;
+  el.textContent = ok ? '🟢 En línea' : '🔴 Sin conexión';
+  el.style.color = ok ? '#22c55e' : '#ef4444';
+}
+
+// ── LISTENERS EN TIEMPO REAL ──
+onSnapshot(collection(firestore, 'productos'), snap => {
+  db.productos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  setConexion(true);
+  refreshUI();
+}, () => setConexion(false));
+
+onSnapshot(query(collection(firestore, 'movimientos'), orderBy('fecha', 'desc'), limit(200)), snap => {
+  db.movimientos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  refreshUI();
+});
+
+onSnapshot(collection(firestore, 'contactos'), snap => {
+  db.contactos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  refreshUI();
+});
+
+function refreshUI() {
+  const active = document.querySelector('.section.active');
+  if (!active) return;
+  const name = active.id.replace('sec-', '');
+  if (name === 'dashboard')   renderDashboard();
+  if (name === 'productos')   renderProductos();
+  if (name === 'movimientos') renderMovForm();
+  if (name === 'historial')   renderHistorial();
+  if (name === 'contactos')   renderContactos();
+}
 
 // ── NAVIGATION ──
 function showSection(name) {
@@ -794,11 +908,13 @@ function showSection(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('sec-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'productos') renderProductos();
+  if (name === 'dashboard')   renderDashboard();
+  if (name === 'productos')   renderProductos();
   if (name === 'movimientos') renderMovForm();
-  if (name === 'historial') renderHistorial();
+  if (name === 'historial')   renderHistorial();
+  if (name === 'contactos')   renderContactos();
 }
+window.showSection = showSection;
 
 // ── TOAST ──
 function toast(msg, ms=2200) {
@@ -806,19 +922,22 @@ function toast(msg, ms=2200) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), ms);
 }
+window.toast = toast;
 
 // ── MODAL ──
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
+window.closeModal = closeModal;
+window.openModal = openModal;
 
-// ── PRODUCTOS ──
+// ── HELPERS ──
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
 
-function guardarProducto() {
+// ── PRODUCTOS ──
+async function guardarProducto() {
   const nombre = document.getElementById('p-nombre').value.trim();
   if (!nombre) { toast('⚠️ Ingresá un nombre'); return; }
   const p = {
-    id: uid(),
     nombre,
     tamanio: document.getElementById('p-tamanio').value.trim(),
     tipo: document.getElementById('p-tipo').value,
@@ -827,23 +946,24 @@ function guardarProducto() {
     minimo: parseInt(document.getElementById('p-minimo').value) || 0,
     notas: document.getElementById('p-notas').value.trim()
   };
-  db.productos.push(p);
-  save('productos', db.productos);
-  ['p-nombre','p-tamanio','p-precio','p-stock','p-minimo','p-notas'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('p-tipo').value = '';
-  renderProductos();
-  toast('✅ Producto guardado');
+  try {
+    await addDoc(collection(firestore, 'productos'), p);
+    ['p-nombre','p-tamanio','p-precio','p-stock','p-minimo','p-notas'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('p-tipo').value = '';
+    toast('✅ Producto guardado');
+  } catch(e) { toast('❌ Error al guardar'); }
 }
+window.guardarProducto = guardarProducto;
 
 function renderProductos() {
-  db = getData();
-  const filtroN = document.getElementById('filtro-nombre').value.toLowerCase();
-  const filtroT = document.getElementById('filtro-tipo').value;
+  const filtroN = (document.getElementById('filtro-nombre')||{}).value?.toLowerCase() || '';
+  const filtroT = (document.getElementById('filtro-tipo')||{}).value || '';
   let prods = db.productos.filter(p =>
     p.nombre.toLowerCase().includes(filtroN) &&
     (!filtroT || p.tipo === filtroT)
   );
   const list = document.getElementById('product-list');
+  if (!list) return;
   if (!prods.length) {
     list.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>Sin productos que coincidan.</p></div>';
     return;
@@ -870,6 +990,7 @@ function renderProductos() {
     </div>`;
   }).join('');
 }
+window.renderProductos = renderProductos;
 
 function editarProducto(id) {
   const p = db.productos.find(x => x.id === id);
@@ -883,29 +1004,33 @@ function editarProducto(id) {
   document.getElementById('edit-notas').value = p.notas;
   openModal('edit-modal');
 }
-function guardarEdicion() {
+window.editarProducto = editarProducto;
+
+async function guardarEdicion() {
   const id = document.getElementById('edit-id').value;
-  const idx = db.productos.findIndex(x => x.id === id);
-  if (idx < 0) return;
-  db.productos[idx].nombre  = document.getElementById('edit-nombre').value.trim();
-  db.productos[idx].tamanio = document.getElementById('edit-tamanio').value.trim();
-  db.productos[idx].tipo    = document.getElementById('edit-tipo').value;
-  db.productos[idx].precio  = parseFloat(document.getElementById('edit-precio').value) || 0;
-  db.productos[idx].minimo  = parseInt(document.getElementById('edit-minimo').value) || 0;
-  db.productos[idx].notas   = document.getElementById('edit-notas').value.trim();
-  save('productos', db.productos);
-  closeModal('edit-modal');
-  renderProductos();
-  toast('✅ Producto actualizado');
+  try {
+    await updateDoc(doc(firestore, 'productos', id), {
+      nombre:  document.getElementById('edit-nombre').value.trim(),
+      tamanio: document.getElementById('edit-tamanio').value.trim(),
+      tipo:    document.getElementById('edit-tipo').value,
+      precio:  parseFloat(document.getElementById('edit-precio').value) || 0,
+      minimo:  parseInt(document.getElementById('edit-minimo').value) || 0,
+      notas:   document.getElementById('edit-notas').value.trim()
+    });
+    closeModal('edit-modal');
+    toast('✅ Producto actualizado');
+  } catch(e) { toast('❌ Error al actualizar'); }
 }
-function eliminarProducto(id) {
+window.guardarEdicion = guardarEdicion;
+
+async function eliminarProducto(id) {
   if (!confirm('¿Eliminar este producto?')) return;
-  db.productos = db.productos.filter(x => x.id !== id);
-  save('productos', db.productos);
-  renderProductos();
-  renderDashboard();
-  toast('🗑️ Producto eliminado');
+  try {
+    await deleteDoc(doc(firestore, 'productos', id));
+    toast('🗑️ Producto eliminado');
+  } catch(e) { toast('❌ Error al eliminar'); }
 }
+window.eliminarProducto = eliminarProducto;
 
 // ── MOVIMIENTOS ──
 let tipoMov = 'entrada';
@@ -922,14 +1047,16 @@ function setTipoMov(t) {
     be.className = 'btn-secondary'; be.style.flex='1'; be.style.background='';
   }
 }
+window.setTipoMov = setTipoMov;
+
 function renderMovForm() {
-  db = getData();
   const sel = document.getElementById('mov-producto');
   const cur = sel.value;
   sel.innerHTML = '<option value="">Seleccionar producto...</option>' +
     db.productos.map(p => `<option value="${p.id}">${p.nombre}${p.tamanio ? ' – '+p.tamanio : ''}</option>`).join('');
   if (cur) sel.value = cur;
 }
+
 document.addEventListener('change', function(e) {
   if (e.target.id === 'mov-producto') updateMovStock();
 });
@@ -938,38 +1065,31 @@ function updateMovStock() {
   const area = document.getElementById('mov-stock-actual');
   if (!id) { area.style.display='none'; return; }
   const p = db.productos.find(x => x.id === id);
-  if (p) {
-    document.getElementById('mov-stock-val').textContent = p.stock;
-    area.style.display = 'block';
-  }
+  if (p) { document.getElementById('mov-stock-val').textContent = p.stock; area.style.display = 'block'; }
 }
-function registrarMovimiento() {
+
+async function registrarMovimiento() {
   const tipo = document.getElementById('mov-tipo').value || tipoMov;
   const pid  = document.getElementById('mov-producto').value;
   const cant = parseInt(document.getElementById('mov-cantidad').value);
   const nota = document.getElementById('mov-nota').value.trim();
   if (!pid) { toast('⚠️ Seleccioná un producto'); return; }
   if (!cant || cant <= 0) { toast('⚠️ Ingresá una cantidad válida'); return; }
-  const idx = db.productos.findIndex(x => x.id === pid);
-  if (idx < 0) return;
-  if (tipo === 'salida' && db.productos[idx].stock < cant) { toast('⛔ Stock insuficiente'); return; }
-  db.productos[idx].stock += tipo === 'entrada' ? cant : -cant;
-  const mov = {
-    id: uid(), tipo, pid,
-    nombre: db.productos[idx].nombre,
-    cantidad: cant, nota,
-    fecha: new Date().toISOString()
-  };
-  db.movimientos.unshift(mov);
-  save('productos', db.productos);
-  save('movimientos', db.movimientos);
-  document.getElementById('mov-cantidad').value = '';
-  document.getElementById('mov-nota').value = '';
-  document.getElementById('mov-producto').value = '';
-  document.getElementById('mov-stock-actual').style.display = 'none';
-  toast((tipo === 'entrada' ? '📥 Entrada' : '📤 Salida') + ' registrada: ' + cant + ' u.');
-  renderDashboard();
+  const p = db.productos.find(x => x.id === pid);
+  if (!p) return;
+  if (tipo === 'salida' && p.stock < cant) { toast('⛔ Stock insuficiente'); return; }
+  const nuevoStock = p.stock + (tipo === 'entrada' ? cant : -cant);
+  try {
+    await updateDoc(doc(firestore, 'productos', pid), { stock: nuevoStock });
+    await addDoc(collection(firestore, 'movimientos'), { tipo, pid, nombre: p.nombre, cantidad: cant, nota, fecha: new Date().toISOString() });
+    document.getElementById('mov-cantidad').value = '';
+    document.getElementById('mov-nota').value = '';
+    document.getElementById('mov-producto').value = '';
+    document.getElementById('mov-stock-actual').style.display = 'none';
+    toast((tipo === 'entrada' ? '📥 Entrada' : '📤 Salida') + ' registrada: ' + cant + ' u.');
+  } catch(e) { toast('❌ Error al registrar'); }
 }
+window.registrarMovimiento = registrarMovimiento;
 
 // ── MOV RÁPIDO ──
 function openMovRapido(id, tipo) {
@@ -985,37 +1105,51 @@ function openMovRapido(id, tipo) {
   document.getElementById('mq-btn').style.background = tipo === 'entrada'
     ? 'linear-gradient(135deg,#166534,#22c55e)'
     : 'linear-gradient(135deg,#7f1d1d,#ef4444)';
+  refreshContactoSelect();
+  document.getElementById('mq-contacto-wrap').style.display = tipo === 'salida' ? 'block' : 'none';
   openModal('mov-modal');
 }
-function confirmarMovRapido() {
+window.openMovRapido = openMovRapido;
+
+async function confirmarMovRapido() {
   const id   = document.getElementById('mq-id').value;
   const tipo = document.getElementById('mq-tipo').value;
   const cant = parseInt(document.getElementById('mq-cantidad').value);
   const nota = document.getElementById('mq-nota').value.trim();
   if (!cant || cant <= 0) { toast('⚠️ Ingresá una cantidad'); return; }
-  const idx = db.productos.findIndex(x => x.id === id);
-  if (idx < 0) return;
-  if (tipo === 'salida' && db.productos[idx].stock < cant) { toast('⛔ Stock insuficiente'); return; }
-  db.productos[idx].stock += tipo === 'entrada' ? cant : -cant;
-  db.movimientos.unshift({ id: uid(), tipo, pid: id, nombre: db.productos[idx].nombre, cantidad: cant, nota, fecha: new Date().toISOString() });
-  save('productos', db.productos);
-  save('movimientos', db.movimientos);
-  closeModal('mov-modal');
-  renderProductos();
-  renderDashboard();
-  toast((tipo === 'entrada' ? '📥 ' : '📤 ') + cant + ' unidades registradas');
+  const p = db.productos.find(x => x.id === id);
+  if (!p) return;
+  if (tipo === 'salida' && p.stock < cant) { toast('⛔ Stock insuficiente'); return; }
+  const cid = document.getElementById('mq-contacto').value;
+  const contacto = cid ? db.contactos.find(x=>x.id===cid) : null;
+  const nuevoStock = p.stock + (tipo === 'entrada' ? cant : -cant);
+  try {
+    await updateDoc(doc(firestore, 'productos', id), { stock: nuevoStock });
+    await addDoc(collection(firestore, 'movimientos'), { tipo, pid: id, nombre: p.nombre, cantidad: cant, nota: nota + (contacto ? ' → '+contacto.nombre : ''), fecha: new Date().toISOString() });
+    closeModal('mov-modal');
+    toast((tipo === 'entrada' ? '📥 ' : '📤 ') + cant + ' unidades registradas');
+    if (tipo === 'salida' && contacto) {
+      setTimeout(() => {
+        if (confirm(`¿Notificar la entrega a ${contacto.nombre} por WhatsApp?`)) {
+          const msg = `📦 *INDUBOL S.A.*\nEntrega registrada:\n  • ${p.nombre}${p.tamanio?' ('+p.tamanio+')':''}: *${cant} unidades*\n📅 ${new Date().toLocaleString('es-AR')}${nota?' \nRef: '+nota:''}`;
+          window.open(`https://wa.me/${contacto.numero}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      }, 300);
+    }
+  } catch(e) { toast('❌ Error al registrar'); }
 }
+window.confirmarMovRapido = confirmarMovRapido;
 
 // ── HISTORIAL ──
 function renderHistorial() {
-  db = getData();
-  const filtroN = document.getElementById('hist-filtro').value.toLowerCase();
-  const filtroT = document.getElementById('hist-tipo').value;
+  const filtroN = (document.getElementById('hist-filtro')||{}).value?.toLowerCase() || '';
+  const filtroT = (document.getElementById('hist-tipo')||{}).value || '';
   let movs = db.movimientos.filter(m =>
     m.nombre.toLowerCase().includes(filtroN) &&
     (!filtroT || m.tipo === filtroT)
   );
   const list = document.getElementById('historial-list');
+  if (!list) return;
   if (!movs.length) {
     list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No hay movimientos que coincidan.</p></div>';
     return;
@@ -1036,9 +1170,9 @@ function renderHistorial() {
     </div>`;
   }).join('');
 }
+window.renderHistorial = renderHistorial;
 
 function exportarCSV() {
-  db = getData();
   if (!db.movimientos.length) { toast('⚠️ No hay movimientos para exportar'); return; }
   const cols = ['Fecha','Tipo','Producto','Cantidad','Nota'];
   const rows = db.movimientos.map(m => [
@@ -1053,87 +1187,167 @@ function exportarCSV() {
   a.click();
   toast('📥 CSV exportado');
 }
+window.exportarCSV = exportarCSV;
 
 // ── DASHBOARD ──
 function renderDashboard() {
-  db = getData();
-  document.getElementById('stat-productos').textContent = db.productos.length;
-  document.getElementById('stat-total-unidades').textContent = db.productos.reduce((a,p)=>a+p.stock,0);
-  document.getElementById('stat-movimientos').textContent = db.movimientos.length;
+  const statP = document.getElementById('stat-productos');
+  const statU = document.getElementById('stat-total-unidades');
+  const statM = document.getElementById('stat-movimientos');
+  if (statP) statP.textContent = db.productos.length;
+  if (statU) statU.textContent = db.productos.reduce((a,p)=>a+p.stock,0);
+  if (statM) statM.textContent = db.movimientos.length;
 
-  // Alertas
   const bajos = db.productos.filter(p => p.stock === 0 || (p.minimo > 0 && p.stock <= p.minimo));
   const alertDiv = document.getElementById('dashboard-alertas');
-  if (!bajos.length) {
-    alertDiv.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Todo el stock está en orden.</p></div>';
-  } else {
-    alertDiv.innerHTML = bajos.map(p => {
-      const cls = p.stock === 0 ? 'zero' : 'low';
-      const label = p.stock === 0 ? '⛔ SIN STOCK' : '⚠️ STOCK BAJO';
-      return `<div class="product-item" style="border-left-color:${p.stock===0?'var(--danger)':'var(--warning)'}">
-        <div class="product-info">
-          <div class="product-name">${p.nombre}</div>
-          <div class="product-meta"><span>${p.tamanio||''}</span><span>${p.tipo||''}</span></div>
-        </div>
-        <div style="text-align:center">
-          <div class="stock-badge ${cls}">${p.stock}</div>
-          <div style="font-size:10px;font-weight:700;color:${p.stock===0?'var(--danger)':'var(--warning)'};letter-spacing:1px;">${label}</div>
-        </div>
-      </div>`;
-    }).join('');
+  if (alertDiv) {
+    if (!bajos.length) {
+      alertDiv.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Todo el stock está en orden.</p></div>';
+    } else {
+      alertDiv.innerHTML = bajos.map(p => {
+        const cls = p.stock === 0 ? 'zero' : 'low';
+        const label = p.stock === 0 ? '⛔ SIN STOCK' : '⚠️ STOCK BAJO';
+        return `<div class="product-item" style="border-left-color:${p.stock===0?'var(--danger)':'var(--warning)'}">
+          <div class="product-info">
+            <div class="product-name">${p.nombre}</div>
+            <div class="product-meta"><span>${p.tamanio||''}</span><span>${p.tipo||''}</span></div>
+          </div>
+          <div style="text-align:center">
+            <div class="stock-badge ${cls}">${p.stock}</div>
+            <div style="font-size:10px;font-weight:700;color:${p.stock===0?'var(--danger)':'var(--warning)'};letter-spacing:1px;">${label}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
   }
 
-  // Últimos movimientos
   const recDiv = document.getElementById('dashboard-recientes');
-  const ultimos = db.movimientos.slice(0, 5);
-  if (!ultimos.length) {
-    recDiv.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Sin movimientos aún.</p></div>';
-  } else {
-    recDiv.innerHTML = ultimos.map(m => {
-      const d = new Date(m.fecha);
-      const f = d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-      return `<div class="hist-item">
-        <div class="hist-badge ${m.tipo}">${m.tipo==='entrada'?'📥':'📤'}</div>
-        <div class="hist-info"><div class="hist-product">${m.nombre}</div><div class="hist-detail">${m.nota||''}</div></div>
-        <div><div class="hist-qty ${m.tipo}">${m.tipo==='entrada'?'+':'-'}${m.cantidad}</div><div class="hist-date">${f}</div></div>
-      </div>`;
-    }).join('');
+  if (recDiv) {
+    const ultimos = db.movimientos.slice(0, 5);
+    if (!ultimos.length) {
+      recDiv.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Sin movimientos aún.</p></div>';
+    } else {
+      recDiv.innerHTML = ultimos.map(m => {
+        const d = new Date(m.fecha);
+        const f = d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+        return `<div class="hist-item">
+          <div class="hist-badge ${m.tipo}">${m.tipo==='entrada'?'📥':'📤'}</div>
+          <div class="hist-info"><div class="hist-product">${m.nombre}</div><div class="hist-detail">${m.nota||''}</div></div>
+          <div><div class="hist-qty ${m.tipo}">${m.tipo==='entrada'?'+':'-'}${m.cantidad}</div><div class="hist-date">${f}</div></div>
+        </div>`;
+      }).join('');
+    }
   }
 }
 
 // ── WHATSAPP ──
 function openWAModal() {
-  db = getData();
   const bajos = db.productos.filter(p => p.stock === 0 || (p.minimo > 0 && p.stock <= p.minimo));
   const total = db.productos.reduce((a,p)=>a+p.stock,0);
-  let msg = `📦 *INDUBOL S.A. – Reporte de Stock*\n`;
-  msg += `📅 ${new Date().toLocaleString('es-AR')}\n\n`;
+  let msg = `📦 *INDUBOL S.A. – Reporte de Stock*\n📅 ${new Date().toLocaleString('es-AR')}\n\n`;
   if (bajos.length) {
     msg += `⚠️ *Productos con stock bajo o sin stock:*\n`;
     bajos.forEach(p => { msg += `  • ${p.nombre}${p.tamanio?' ('+p.tamanio+')':''}: *${p.stock} unidades*\n`; });
     msg += '\n';
   }
-  msg += `📊 *Resumen:*\n`;
-  msg += `  • Total de productos: ${db.productos.length}\n`;
-  msg += `  • Total de unidades en stock: ${total}\n`;
+  msg += `📊 *Resumen:*\n  • Total productos: ${db.productos.length}\n  • Total unidades: ${total}\n`;
   if (db.movimientos.length) {
     const ult = db.movimientos[0];
-    msg += `\n🕐 *Último movimiento:*\n  ${ult.tipo==='entrada'?'📥 Entrada':'📤 Salida'} de ${ult.cantidad} u. de ${ult.nombre}`;
+    msg += `\n🕐 *Último movimiento:*\n  ${ult.tipo==='entrada'?'📥':'📤'} ${ult.cantidad} u. de ${ult.nombre}`;
   }
   document.getElementById('wa-preview').textContent = msg;
   document.getElementById('wa-mensaje').value = msg;
-  document.getElementById('wa-numero').value = db.waNumero || '';
+  document.getElementById('wa-numero').value = localStorage.getItem('ind_wa_numero') || '';
   openModal('wa-modal');
 }
+window.openWAModal = openWAModal;
+
 function enviarWhatsApp() {
   const num = document.getElementById('wa-numero').value.replace(/\D/g,'');
   const msg = document.getElementById('wa-mensaje').value;
   if (!num) { toast('⚠️ Ingresá un número de WhatsApp'); return; }
-  saveStr('wa_numero', num);
-  const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
-  window.open(url, '_blank');
+  localStorage.setItem('ind_wa_numero', num);
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
   closeModal('wa-modal');
   toast('📲 Abriendo WhatsApp...');
+}
+window.enviarWhatsApp = enviarWhatsApp;
+
+// ── CONTACTOS ──
+async function guardarContacto() {
+  const nombre = document.getElementById('c-nombre').value.trim();
+  const numero = document.getElementById('c-numero').value.replace(/\D/g,'');
+  if (!nombre) { toast('⚠️ Ingresá un nombre'); return; }
+  if (!numero)  { toast('⚠️ Ingresá un número'); return; }
+  try {
+    await addDoc(collection(firestore, 'contactos'), { nombre, numero });
+    document.getElementById('c-nombre').value = '';
+    document.getElementById('c-numero').value = '';
+    toast('✅ Contacto guardado');
+  } catch(e) { toast('❌ Error al guardar'); }
+}
+window.guardarContacto = guardarContacto;
+
+function renderContactos() {
+  const filtro = (document.getElementById('filtro-contacto')||{}).value?.toLowerCase() || '';
+  const lista = db.contactos.filter(c => c.nombre.toLowerCase().includes(filtro));
+  const div = document.getElementById('contact-list');
+  if (!div) return;
+  if (!lista.length) {
+    div.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>No hay contactos que coincidan.</p></div>';
+    return;
+  }
+  div.innerHTML = lista.map(c => `
+    <div class="contact-item">
+      <div class="contact-avatar">${c.nombre.charAt(0).toUpperCase()}</div>
+      <div class="contact-info">
+        <div class="contact-name">${c.nombre}</div>
+        <div class="contact-number">+${c.numero}</div>
+      </div>
+      <div class="contact-actions">
+        <button class="btn-icon btn-wa" title="Abrir WhatsApp" onclick="abrirWAContacto('${c.id}')">💬</button>
+        <button class="btn-icon btn-wa btn-wa-stock" title="Enviar reporte" onclick="enviarStockAContacto('${c.id}')">📦</button>
+        <button class="btn-icon btn-delete" title="Eliminar" onclick="eliminarContacto('${c.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+window.renderContactos = renderContactos;
+
+function abrirWAContacto(id) {
+  const c = db.contactos.find(x => x.id === id);
+  if (c) window.open(`https://wa.me/${c.numero}`, '_blank');
+}
+window.abrirWAContacto = abrirWAContacto;
+
+function enviarStockAContacto(id) {
+  const c = db.contactos.find(x => x.id === id);
+  if (!c) return;
+  const total = db.productos.reduce((a,p)=>a+p.stock,0);
+  const bajos = db.productos.filter(p => p.stock === 0 || (p.minimo > 0 && p.stock <= p.minimo));
+  let msg = `📦 *INDUBOL S.A. – Reporte de Stock*\n📅 ${new Date().toLocaleString('es-AR')}\n\n`;
+  if (bajos.length) {
+    msg += `⚠️ *Productos con stock bajo:*\n`;
+    bajos.forEach(p => { msg += `  • ${p.nombre}${p.tamanio?' ('+p.tamanio+')':''}: *${p.stock} u.*\n`; });
+    msg += '\n';
+  }
+  msg += `📊 Total en stock: *${total} unidades*`;
+  window.open(`https://wa.me/${c.numero}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+window.enviarStockAContacto = enviarStockAContacto;
+
+async function eliminarContacto(id) {
+  if (!confirm('¿Eliminar este contacto?')) return;
+  try {
+    await deleteDoc(doc(firestore, 'contactos', id));
+    toast('🗑️ Contacto eliminado');
+  } catch(e) { toast('❌ Error al eliminar'); }
+}
+window.eliminarContacto = eliminarContacto;
+
+function refreshContactoSelect() {
+  const sel = document.getElementById('mq-contacto');
+  sel.innerHTML = '<option value="">Sin destinatario</option>' +
+    db.contactos.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
 }
 
 // Cerrar modales al click fuera
