@@ -555,7 +555,7 @@
   </div>
   <nav>
     <button class="active" onclick="showSection('dashboard')" id="tab-dashboard">
-      <span class="nav-icon">📊</span>Dashboard
+      <span class="nav-icon">📊</span>Resumen
     </button>
     <button onclick="showSection('productos')" id="tab-productos">
       <span class="nav-icon">📦</span>Productos
@@ -698,8 +698,19 @@
           <input id="mov-cantidad" type="number" placeholder="0" min="1">
         </div>
         <div>
+          <label>Cliente</label>
+          <input id="mov-cliente" type="text" placeholder="Ej: Juan Pérez">
+        </div>
+        <div class="full">
           <label>Referencia / Nota</label>
           <input id="mov-nota" type="text" placeholder="Ej: Remito 1234">
+        </div>
+        <div class="full">
+          <label>Adjuntar foto o archivo (opcional)</label>
+          <div id="mov-upload-area" style="border:2px dashed var(--indigo-300);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:border-color .2s;" onclick="document.getElementById('mov-archivo').click()">
+            <div id="mov-upload-preview" style="font-size:13px;color:var(--text-muted);">📎 Tocá para adjuntar imagen o PDF</div>
+          </div>
+          <input type="file" id="mov-archivo" accept="image/*,application/pdf" style="display:none;" onchange="previewArchivoMov()">
         </div>
       </div>
       <div id="mov-stock-actual" style="margin:10px 0; padding:10px 14px; background:var(--indigo-50); border-radius:8px; font-size:13px; color:var(--text-secondary); display:none;">
@@ -811,8 +822,15 @@
     </div>
     <label>Cantidad</label>
     <input id="mq-cantidad" type="number" placeholder="0" min="1" style="margin-bottom:12px;">
+    <label>Cliente</label>
+    <input id="mq-cliente" type="text" placeholder="Ej: Juan Pérez" style="margin-bottom:12px;">
     <label>Referencia / Nota</label>
-    <input id="mq-nota" type="text" placeholder="Ej: Remito 1234">
+    <input id="mq-nota" type="text" placeholder="Ej: Remito 1234" style="margin-bottom:12px;">
+    <label>Adjuntar foto o archivo (opcional)</label>
+    <div id="mq-upload-area" style="border:2px dashed var(--indigo-300);border-radius:10px;padding:14px;text-align:center;cursor:pointer;margin-bottom:4px;transition:border-color .2s;" onclick="document.getElementById('mq-archivo').click()">
+      <div id="mq-upload-preview" style="font-size:13px;color:var(--text-muted);">📎 Tocá para adjuntar imagen o PDF</div>
+    </div>
+    <input type="file" id="mq-archivo" accept="image/*,application/pdf" style="display:none;" onchange="previewArchivo()">
     <div id="mq-contacto-wrap" style="margin-top:12px; display:none;">
       <label>Destinatario (opcional)</label>
       <select id="mq-contacto"><option value="">Sin destinatario</option></select>
@@ -1032,7 +1050,63 @@ async function eliminarProducto(id) {
 }
 window.eliminarProducto = eliminarProducto;
 
-// ── MOVIMIENTOS ──
+// ── CLOUDINARY ──
+const CLOUD_NAME = 'djgubesu5';
+const UPLOAD_PRESET = 'indubol';
+
+function previewArchivo() {
+  const file = document.getElementById('mq-archivo').files[0];
+  const prev = document.getElementById('mq-upload-preview');
+  const area = document.getElementById('mq-upload-area');
+  if (!file) return;
+  area.style.borderColor = 'var(--indigo-500)';
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => { prev.innerHTML = `<img src="${e.target.result}" style="max-height:80px;border-radius:6px;"> <div style="font-size:11px;margin-top:4px;color:var(--indigo-600);">${file.name}</div>`; };
+    reader.readAsDataURL(file);
+  } else {
+    prev.innerHTML = `📄 <strong>${file.name}</strong>`;
+  }
+}
+window.previewArchivo = previewArchivo;
+
+function previewArchivoMov() {
+  const file = document.getElementById('mov-archivo').files[0];
+  const prev = document.getElementById('mov-upload-preview');
+  const area = document.getElementById('mov-upload-area');
+  if (!file) return;
+  area.style.borderColor = 'var(--indigo-500)';
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => { prev.innerHTML = `<img src="${e.target.result}" style="max-height:80px;border-radius:6px;"> <div style="font-size:11px;margin-top:4px;color:var(--indigo-600);">${file.name}</div>`; };
+    reader.readAsDataURL(file);
+  } else {
+    prev.innerHTML = `📄 <strong>${file.name}</strong>`;
+  }
+}
+window.previewArchivoMov = previewArchivoMov;
+
+async function subirACloudinary(file) {
+  if (!file) return null;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('folder', 'indubol');
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: 'POST', body: formData });
+  const data = await res.json();
+  return data.secure_url || null;
+}
+
+function resetUploadMQ() {
+  document.getElementById('mq-archivo').value = '';
+  document.getElementById('mq-upload-preview').innerHTML = '📎 Tocá para adjuntar imagen o PDF';
+  document.getElementById('mq-upload-area').style.borderColor = 'var(--indigo-300)';
+}
+function resetUploadMov() {
+  document.getElementById('mov-archivo').value = '';
+  document.getElementById('mov-upload-preview').innerHTML = '📎 Tocá para adjuntar imagen o PDF';
+  document.getElementById('mov-upload-area').style.borderColor = 'var(--indigo-300)';
+}
 let tipoMov = 'entrada';
 function setTipoMov(t) {
   tipoMov = t;
@@ -1073,6 +1147,8 @@ async function registrarMovimiento() {
   const pid  = document.getElementById('mov-producto').value;
   const cant = parseInt(document.getElementById('mov-cantidad').value);
   const nota = document.getElementById('mov-nota').value.trim();
+  const cliente = document.getElementById('mov-cliente').value.trim();
+  const archivo = document.getElementById('mov-archivo').files[0];
   if (!pid) { toast('⚠️ Seleccioná un producto'); return; }
   if (!cant || cant <= 0) { toast('⚠️ Ingresá una cantidad válida'); return; }
   const p = db.productos.find(x => x.id === pid);
@@ -1080,14 +1156,18 @@ async function registrarMovimiento() {
   if (tipo === 'salida' && p.stock < cant) { toast('⛔ Stock insuficiente'); return; }
   const nuevoStock = p.stock + (tipo === 'entrada' ? cant : -cant);
   try {
+    let archivoUrl = null;
+    if (archivo) { toast('⏳ Subiendo archivo...', 5000); archivoUrl = await subirACloudinary(archivo); }
     await updateDoc(doc(firestore, 'productos', pid), { stock: nuevoStock });
-    await addDoc(collection(firestore, 'movimientos'), { tipo, pid, nombre: p.nombre, cantidad: cant, nota, fecha: new Date().toISOString() });
+    await addDoc(collection(firestore, 'movimientos'), { tipo, pid, nombre: p.nombre, cantidad: cant, nota, cliente, archivoUrl, fecha: new Date().toISOString() });
     document.getElementById('mov-cantidad').value = '';
     document.getElementById('mov-nota').value = '';
+    document.getElementById('mov-cliente').value = '';
     document.getElementById('mov-producto').value = '';
     document.getElementById('mov-stock-actual').style.display = 'none';
+    resetUploadMov();
     toast((tipo === 'entrada' ? '📥 Entrada' : '📤 Salida') + ' registrada: ' + cant + ' u.');
-  } catch(e) { toast('❌ Error al registrar'); }
+  } catch(e) { toast('❌ Error al registrar'); console.error(e); }
 }
 window.registrarMovimiento = registrarMovimiento;
 
@@ -1101,6 +1181,7 @@ function openMovRapido(id, tipo) {
   document.getElementById('mq-stock').textContent = p.stock;
   document.getElementById('mq-cantidad').value = '';
   document.getElementById('mq-nota').value = '';
+  document.getElementById('mq-cliente').value = '';
   document.getElementById('mov-modal-title').textContent = tipo === 'entrada' ? '📥 Entrada Rápida' : '📤 Salida Rápida';
   document.getElementById('mq-btn').style.background = tipo === 'entrada'
     ? 'linear-gradient(135deg,#166534,#22c55e)'
@@ -1116,6 +1197,8 @@ async function confirmarMovRapido() {
   const tipo = document.getElementById('mq-tipo').value;
   const cant = parseInt(document.getElementById('mq-cantidad').value);
   const nota = document.getElementById('mq-nota').value.trim();
+  const cliente = document.getElementById('mq-cliente').value.trim();
+  const archivo = document.getElementById('mq-archivo').files[0];
   if (!cant || cant <= 0) { toast('⚠️ Ingresá una cantidad'); return; }
   const p = db.productos.find(x => x.id === id);
   if (!p) return;
@@ -1124,21 +1207,33 @@ async function confirmarMovRapido() {
   const contacto = cid ? db.contactos.find(x=>x.id===cid) : null;
   const nuevoStock = p.stock + (tipo === 'entrada' ? cant : -cant);
   try {
+    let archivoUrl = null;
+    if (archivo) { toast('⏳ Subiendo archivo...', 5000); archivoUrl = await subirACloudinary(archivo); }
     await updateDoc(doc(firestore, 'productos', id), { stock: nuevoStock });
-    await addDoc(collection(firestore, 'movimientos'), { tipo, pid: id, nombre: p.nombre, cantidad: cant, nota: nota + (contacto ? ' → '+contacto.nombre : ''), fecha: new Date().toISOString() });
+    await addDoc(collection(firestore, 'movimientos'), { tipo, pid: id, nombre: p.nombre, cantidad: cant, nota: nota + (contacto ? ' → '+contacto.nombre : ''), cliente, archivoUrl, fecha: new Date().toISOString() });
     closeModal('mov-modal');
+    resetUploadMQ();
     toast((tipo === 'entrada' ? '📥 ' : '📤 ') + cant + ' unidades registradas');
     if (tipo === 'salida' && contacto) {
       setTimeout(() => {
         if (confirm(`¿Notificar la entrega a ${contacto.nombre} por WhatsApp?`)) {
-          const msg = `📦 *INDUBOL S.A.*\nEntrega registrada:\n  • ${p.nombre}${p.tamanio?' ('+p.tamanio+')':''}: *${cant} unidades*\n📅 ${new Date().toLocaleString('es-AR')}${nota?' \nRef: '+nota:''}`;
+          const msg = `📦 *INDUBOL S.A.*\nEntrega registrada:\n  • ${p.nombre}${p.tamanio?' ('+p.tamanio+')':''}: *${cant} unidades*\n📅 ${new Date().toLocaleString('es-AR')}${cliente?' \nCliente: '+cliente:''}${nota?' \nRef: '+nota:''}`;
           window.open(`https://wa.me/${contacto.numero}?text=${encodeURIComponent(msg)}`, '_blank');
         }
       }, 300);
     }
-  } catch(e) { toast('❌ Error al registrar'); }
+  } catch(e) { toast('❌ Error al registrar'); console.error(e); }
 }
 window.confirmarMovRapido = confirmarMovRapido;
+
+async function eliminarMovimiento(id) {
+  if (!confirm('¿Borrar este movimiento?\n\nAtención: esto NO revierte el stock automáticamente.')) return;
+  try {
+    await deleteDoc(doc(firestore, 'movimientos', id));
+    toast('🗑️ Movimiento eliminado');
+  } catch(e) { toast('❌ Error al eliminar'); }
+}
+window.eliminarMovimiento = eliminarMovimiento;
 
 // ── HISTORIAL ──
 function renderHistorial() {
@@ -1157,15 +1252,19 @@ function renderHistorial() {
   list.innerHTML = movs.map(m => {
     const d = new Date(m.fecha);
     const fechaStr = d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    const detalle = [m.cliente ? '👤 '+m.cliente : '', m.nota || ''].filter(Boolean).join(' · ') || (m.tipo === 'entrada' ? 'Ingreso de stock' : 'Egreso de stock');
+    const adjunto = m.archivoUrl ? `<a href="${m.archivoUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--indigo-600);font-weight:600;margin-top:4px;text-decoration:none;background:var(--indigo-50);border:1px solid var(--indigo-200);border-radius:20px;padding:2px 8px;">${m.archivoUrl.match(/\.(jpg|jpeg|png|gif|webp)/i)?'🖼️ Ver imagen':'📄 Ver archivo'}</a>` : '';
     return `<div class="hist-item">
       <div class="hist-badge ${m.tipo}">${m.tipo === 'entrada' ? '📥' : '📤'}</div>
       <div class="hist-info">
         <div class="hist-product">${m.nombre}</div>
-        <div class="hist-detail">${m.nota || (m.tipo === 'entrada' ? 'Ingreso de stock' : 'Egreso de stock')}</div>
+        <div class="hist-detail">${detalle}</div>
+        ${adjunto}
       </div>
-      <div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
         <div class="hist-qty ${m.tipo}">${m.tipo === 'entrada' ? '+' : '-'}${m.cantidad}</div>
         <div class="hist-date">${fechaStr}</div>
+        <button onclick="eliminarMovimiento('${m.id}')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:600;">🗑️ Borrar</button>
       </div>
     </div>`;
   }).join('');
@@ -1230,9 +1329,10 @@ function renderDashboard() {
       recDiv.innerHTML = ultimos.map(m => {
         const d = new Date(m.fecha);
         const f = d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+        const detalle = [m.cliente ? '👤 '+m.cliente : '', m.nota||''].filter(Boolean).join(' · ');
         return `<div class="hist-item">
           <div class="hist-badge ${m.tipo}">${m.tipo==='entrada'?'📥':'📤'}</div>
-          <div class="hist-info"><div class="hist-product">${m.nombre}</div><div class="hist-detail">${m.nota||''}</div></div>
+          <div class="hist-info"><div class="hist-product">${m.nombre}</div><div class="hist-detail">${detalle||''}</div></div>
           <div><div class="hist-qty ${m.tipo}">${m.tipo==='entrada'?'+':'-'}${m.cantidad}</div><div class="hist-date">${f}</div></div>
         </div>`;
       }).join('');
