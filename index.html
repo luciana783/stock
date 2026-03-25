@@ -1227,11 +1227,19 @@ async function confirmarMovRapido() {
 window.confirmarMovRapido = confirmarMovRapido;
 
 async function eliminarMovimiento(id) {
-  if (!confirm('¿Borrar este movimiento?\n\nAtención: esto NO revierte el stock automáticamente.')) return;
+  if (!confirm('¿Borrar este movimiento?\n\nEl stock se va a revertir automáticamente.')) return;
+  const m = db.movimientos.find(x => x.id === id);
+  if (!m) return;
+  const p = db.productos.find(x => x.id === m.pid);
   try {
+    if (p) {
+      // Revertir: si fue entrada, restamos; si fue salida, sumamos
+      const stockRevertido = p.stock + (m.tipo === 'entrada' ? -m.cantidad : m.cantidad);
+      await updateDoc(doc(firestore, 'productos', m.pid), { stock: Math.max(0, stockRevertido) });
+    }
     await deleteDoc(doc(firestore, 'movimientos', id));
-    toast('🗑️ Movimiento eliminado');
-  } catch(e) { toast('❌ Error al eliminar'); }
+    toast('🗑️ Movimiento eliminado y stock revertido');
+  } catch(e) { toast('❌ Error al eliminar'); console.error(e); }
 }
 window.eliminarMovimiento = eliminarMovimiento;
 
@@ -1272,19 +1280,48 @@ function renderHistorial() {
 window.renderHistorial = renderHistorial;
 
 function exportarCSV() {
-  if (!db.movimientos.length) { toast('⚠️ No hay movimientos para exportar'); return; }
-  const cols = ['Fecha','Tipo','Producto','Cantidad','Nota'];
-  const rows = db.movimientos.map(m => [
-    new Date(m.fecha).toLocaleString('es-AR'),
-    m.tipo, m.nombre, m.cantidad, m.nota || ''
-  ].map(v => `"${v}"`).join(','));
-  const csv = [cols.join(','), ...rows].join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'indubol_stock_' + new Date().toLocaleDateString('es-AR').replace(/\//g,'-') + '.csv';
-  a.click();
-  toast('📥 CSV exportado');
+  if (!db.movimientos.length && !db.productos.length) { toast('⚠️ No hay datos para exportar'); return; }
+
+  // ── CSV 1: Historial de movimientos ──
+  if (db.movimientos.length) {
+    const cols = ['Fecha','Tipo','Producto','Cliente','Cantidad','Nota','Archivo adjunto'];
+    const rows = db.movimientos.map(m => [
+      new Date(m.fecha).toLocaleString('es-AR'),
+      m.tipo === 'entrada' ? 'Entrada' : 'Salida',
+      m.nombre,
+      m.cliente || '',
+      m.cantidad,
+      m.nota || '',
+      m.archivoUrl || ''
+    ].map(v => `"${v}"`).join(','));
+    const csv1 = [cols.join(','), ...rows].join('\n');
+    const blob1 = new Blob([csv1], {type:'text/csv;charset=utf-8;'});
+    const a1 = document.createElement('a');
+    a1.href = URL.createObjectURL(blob1);
+    a1.download = 'indubol_movimientos_' + new Date().toLocaleDateString('es-AR').replace(/\//g,'-') + '.csv';
+    a1.click();
+  }
+
+  // ── CSV 2: Stock actual por producto ──
+  if (db.productos.length) {
+    setTimeout(() => {
+      const cols2 = ['Producto','Tamaño','Tipo de confección','Precio','Stock actual','Stock mínimo','Notas'];
+      const rows2 = db.productos.map(p => [
+        p.nombre, p.tamanio || '', p.tipo || '',
+        p.precio > 0 ? p.precio : '',
+        p.stock, p.minimo || 0, p.notas || ''
+      ].map(v => `"${v}"`).join(','));
+      const csv2 = [cols2.join(','), ...rows2].join('\n');
+      const blob2 = new Blob([csv2], {type:'text/csv;charset=utf-8;'});
+      const a2 = document.createElement('a');
+      a2.href = URL.createObjectURL(blob2);
+      a2.download = 'indubol_stock_' + new Date().toLocaleDateString('es-AR').replace(/\//g,'-') + '.csv';
+      a2.click();
+      toast('📥 2 archivos CSV exportados');
+    }, 800);
+  } else {
+    toast('📥 CSV de movimientos exportado');
+  }
 }
 window.exportarCSV = exportarCSV;
 
